@@ -3,6 +3,13 @@ plugins {
     id("net.neoforged.moddev")
 }
 
+neoFormRuntime {
+    // Minecraft 26.3 requires the anonymous-class access transformer fix in JST.
+    if (stonecutter.eval(stonecutter.current.version, ">=26.3")) {
+        version = "2.0.31"
+    }
+}
+
 version = "neoforge-${property("mod.version")}+mc${property("mod.mc_dep_display")}"
 base.archivesName = property("mod.id") as String
 
