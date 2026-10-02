@@ -6,6 +6,7 @@ import com.springwater.easybot.bridge.packet.BindStatusAccount;
 import com.springwater.easybot.bridge.packet.ConfirmBindResultPacket;
 import com.springwater.easybot.bridge.packet.QueryBindStatusResultPacket;
 import com.springwater.easybot.commands.ICommandHandler;
+import com.springwater.easybot.utils.PermissionUtils;
 import com.springwater.easybot.config.ConfigLoader;
 import com.springwater.easybot.impl.ComponentAdapterImpl;
 import com.springwater.easybot.platforms.EasyBotModImpl;
@@ -32,12 +33,13 @@ public class BindCommandHandler implements ICommandHandler {
     public void register(LiteralArgumentBuilder<CommandSourceStack> stack) {
         stack.then(
                 LiteralArgumentBuilder.<CommandSourceStack>literal("bind")
+                        .requires(source -> PermissionUtils.canUse(source, "bind") || PermissionUtils.canUse(source, "bindStatus"))
                         .executes(context -> {
                             if (!context.getSource().isPlayer()) {
                                 ModData.LOGGER.warn("温馨提示: 无法给控制台绑定账号哦。");
                                 return 1;
                             }
-                            if (!ConfigLoader.get().getCommand().isAllowBind()) {
+                            if (!PermissionUtils.canUse(context.getSource(), "bind")) {
                                 context.getSource().sendFailure(Component.literal("当前服务器不允许绑定"));
                                 return 0;
                             }
@@ -86,13 +88,13 @@ public class BindCommandHandler implements ICommandHandler {
 
                             return 1;
                         })
-                        .then(LiteralArgumentBuilder.<CommandSourceStack>literal("confirm")
+                        .then(LiteralArgumentBuilder.<CommandSourceStack>literal("confirm").requires(source -> PermissionUtils.canUse(source, "bind"))
                                 .executes(context -> {
                                     if (!context.getSource().isPlayer()) {
                                         ModData.LOGGER.warn("温馨提示: 无法给控制台绑定账号哦。");
                                         return 1;
                                     }
-                                    if (!ConfigLoader.get().getCommand().isAllowBind()) {
+                                    if (!PermissionUtils.canUse(context.getSource(), "bind")) {
                                         context.getSource().sendFailure(Component.literal("当前服务器不允许绑定"));
                                         return 0;
                                     }
@@ -127,7 +129,7 @@ public class BindCommandHandler implements ICommandHandler {
         );
 
         stack.then(
-                LiteralArgumentBuilder.<CommandSourceStack>literal("confirm")
+                LiteralArgumentBuilder.<CommandSourceStack>literal("confirm").requires(source -> PermissionUtils.canUse(source, "confirm"))
                         .executes(context -> {
                             context.getSource().sendFailure(Component.literal("用法: /easybot confirm <code>").withStyle(ChatFormatting.RED));
                             return 0;
@@ -177,7 +179,8 @@ public class BindCommandHandler implements ICommandHandler {
         );
 
         stack.then(
-                LiteralArgumentBuilder.<CommandSourceStack>literal("status")
+                LiteralArgumentBuilder.<CommandSourceStack>literal("bind")
+                        .then(LiteralArgumentBuilder.<CommandSourceStack>literal("status").requires(source -> PermissionUtils.canUse(source, "bindStatus"))
                         .executes(context -> {
                             if (!context.getSource().isPlayer()) {
                                 ModData.LOGGER.warn("温馨提示: 无法查询控制台绑定状态。");
@@ -224,7 +227,7 @@ public class BindCommandHandler implements ICommandHandler {
                             }, "查询绑定状态任务");
 
                             return 1;
-                        })
+                        }))
         );
     }
 

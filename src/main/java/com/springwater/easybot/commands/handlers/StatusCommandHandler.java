@@ -18,7 +18,7 @@ public class StatusCommandHandler implements ICommandHandler {
 
     @Override
     public void register(LiteralArgumentBuilder<CommandSourceStack> stack) {
-        stack.then(LiteralArgumentBuilder.<CommandSourceStack>literal("status").requires((source) -> PermissionUtils.hasPermission(source,3)).executes((context) -> {
+        stack.then(LiteralArgumentBuilder.<CommandSourceStack>literal("status").requires((source) -> PermissionUtils.canUse(source, "status")).executes((context) -> {
             CommandSourceStack source = context.getSource();
             MutableComponent root = Component.empty();
 
