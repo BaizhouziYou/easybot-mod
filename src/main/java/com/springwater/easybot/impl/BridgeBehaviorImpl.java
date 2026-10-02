@@ -98,6 +98,7 @@ public class BridgeBehaviorImpl implements BridgeBehavior {
 
     @Override
     public void SyncToChat(String message) {
+        if (com.springwater.easybot.utils.ChatFilterUtils.blocksIncoming(message, null)) return;
         EasyBotModImpl.INSTANCE.getServer().getPlayerList().broadcastSystemMessage(Component.literal(message), false);
     }
 
@@ -167,6 +168,7 @@ public class BridgeBehaviorImpl implements BridgeBehavior {
 
     @Override
     public void SyncToChatExtra(List<Segment> segments, String text) {
+        if (com.springwater.easybot.utils.ChatFilterUtils.blocksIncoming(text, segments)) return;
         List<Segment> segmentsToAdd = new ArrayList<>();
         StringBuilder currentText = new StringBuilder();
 

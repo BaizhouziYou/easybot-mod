@@ -6,6 +6,10 @@ plugins {
 val shade by configurations.creating
 configurations.implementation.get().extendsFrom(shade)
 
+dependencies {
+    compileOnly("net.luckperms:api:5.4")
+}
+
 repositories {
     /**
      * Restricts dependency search of the given [groups] to the [maven URL][url],
