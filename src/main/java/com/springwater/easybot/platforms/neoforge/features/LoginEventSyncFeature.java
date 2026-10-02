@@ -8,12 +8,15 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.SyncCooldown;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 public class LoginEventSyncFeature implements IEasyBotFeatures {
+    private final SyncCooldown joinCooldown = new SyncCooldown();
+    private final SyncCooldown quitCooldown = new SyncCooldown();
 
     @Override
     public void register() {
@@ -35,6 +38,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
             return;
         }
         // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
+        if (!joinCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getJoinCooldownSeconds())) return;
         var playerInfo = PlayerUtils.getPlayerInfo(player);
         EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncEnterExit(playerInfo, true), "消息同步-进服");
     }
@@ -54,6 +58,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
             return;
         }
         // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
+        if (!quitCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getQuitCooldownSeconds())) return;
         var playerInfo = PlayerUtils.getPlayerInfo(player);
         EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncEnterExit(playerInfo, false), "消息同步-退服");
     }

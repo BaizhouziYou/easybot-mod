@@ -32,6 +32,9 @@
     "useMixinReport1201": false
   },
   "sync": {
-    "chatImageSupport": true
+    "chatImageSupport": true,
+    "joinCooldownSeconds": 0,
+    "quitCooldownSeconds": 0,
+    "deathCooldownSeconds": 0
   }
 }

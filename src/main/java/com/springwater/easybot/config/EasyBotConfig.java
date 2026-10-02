@@ -84,5 +84,8 @@ public class EasyBotConfig {
     @ToString
     public static class Sync {
         private boolean chatImageSupport = true;
+        private int joinCooldownSeconds = 0;
+        private int quitCooldownSeconds = 0;
+        private int deathCooldownSeconds = 0;
     }
 }

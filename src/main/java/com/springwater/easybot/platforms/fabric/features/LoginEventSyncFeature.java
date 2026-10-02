@@ -8,9 +8,12 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.SyncCooldown;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 public class LoginEventSyncFeature implements IEasyBotFeatures {
+    private final SyncCooldown joinCooldown = new SyncCooldown();
+    private final SyncCooldown quitCooldown = new SyncCooldown();
     @Override
     public void register() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
@@ -27,6 +30,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
                 ModData.LOGGER.warn("玩家取消玩家上线同步,因为服务器未连接主程序");
                 return;
             }
+            if (!joinCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getJoinCooldownSeconds())) return;
             var playerInfo = PlayerUtils.getPlayerInfo(player); // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
             EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncEnterExit(playerInfo, true), "消息同步-进服");
         });
@@ -45,6 +49,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
                 ModData.LOGGER.warn("玩家取消玩家下线同步,因为服务器未连接主程序");
                 return;
             }
+            if (!quitCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getQuitCooldownSeconds())) return;
             var playerInfo = PlayerUtils.getPlayerInfo(player); // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
             EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncEnterExit(playerInfo, false), "消息同步-退服");
         });
