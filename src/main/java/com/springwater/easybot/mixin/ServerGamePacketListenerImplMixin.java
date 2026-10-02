@@ -30,9 +30,8 @@ public class ServerGamePacketListenerImplMixin {
     @Inject(method = "broadcastChatMessage", at = @At("HEAD"))
     private void onBroadcastChatMessage(PlayerChatMessage message, CallbackInfo ci) {
         var player = ((ServerGamePacketListenerImpl) (Object) this).player;
-        if (!message.isSystem()) {
-            com.springwater.easybot.platforms.fabric.features.MessageSyncFeature.onChatMessage(message, player);
-        }
+        // 此入口只处理该连接的玩家聊天，FabricProxy-Lite 可能将其标记为系统消息。
+        com.springwater.easybot.platforms.fabric.features.MessageSyncFeature.onChatMessage(message, player);
     }
 }
 //?} else {
