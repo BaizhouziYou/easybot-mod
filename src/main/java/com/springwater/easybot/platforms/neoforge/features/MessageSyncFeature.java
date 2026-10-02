@@ -8,6 +8,7 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.ChatFilterUtils;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.ServerChatEvent;
@@ -18,7 +19,7 @@ public class MessageSyncFeature implements IEasyBotFeatures {
         NeoForge.EVENT_BUS.register(this);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
     public void onServerChat(ServerChatEvent event) {
         if (ConfigLoader.get().getSkipOptions().isSkipChat()) return;
         if (!EasyBotModImpl.INSTANCE.getBridgeClient().isReady()) {
@@ -34,6 +35,7 @@ public class MessageSyncFeature implements IEasyBotFeatures {
         }
         var messageContent = event.getRawText();
         var playerInfo = PlayerUtils.getPlayerInfo(sender); // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
+        if (ChatFilterUtils.outgoingRejection(playerInfo, messageContent) != null) return;
         EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncMessage(playerInfo, messageContent, false), "消息同步");
     }
 }

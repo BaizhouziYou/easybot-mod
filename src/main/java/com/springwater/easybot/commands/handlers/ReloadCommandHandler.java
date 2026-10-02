@@ -23,7 +23,7 @@ public class ReloadCommandHandler implements ICommandHandler {
     @Override
     public void register(LiteralArgumentBuilder<CommandSourceStack> stack) {
         stack.then(LiteralArgumentBuilder.<CommandSourceStack>literal("reload")
-                .requires(source -> PermissionUtils.hasPermission(source,3))
+                .requires(source -> PermissionUtils.canUse(source, "reload"))
                 .executes(context -> {
                     CommandSourceStack source = context.getSource();
                     if (isReloading.get()) {
@@ -43,9 +43,9 @@ public class ReloadCommandHandler implements ICommandHandler {
                     
                     new Thread(() -> {
                         try {
-                            ConfigLoader.reload(); 
+                            boolean success = ConfigLoader.reload();
                             server.execute(() -> {
-                                sendReloadResult(server, playerUUID, true, null);
+                                sendReloadResult(server, playerUUID, success, success ? null : "配置无效，继续使用上一个有效配置");
                             });
                         } catch (Exception e) {
                             server.execute(() -> {

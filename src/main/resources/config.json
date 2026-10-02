@@ -10,7 +10,22 @@
   },
   "command": {
     "allowBind": true,
-    "waitTime": 3
+    "waitTime": 3,
+    "enabled": {
+      "help": true,
+      "say": true,
+      "status": true,
+      "reload": true,
+      "config": true,
+      "bind": true,
+      "confirm": true,
+      "bindStatus": true
+    },
+    "permissionLevels": {
+      "status": 3,
+      "reload": 3,
+      "config": 3
+    }
   },
   "skipOptions": {
     "skipJoin": false,
@@ -36,5 +51,17 @@
     "joinCooldownSeconds": 0,
     "quitCooldownSeconds": 0,
     "deathCooldownSeconds": 0
+  },
+  "chatFilter": {
+    "gameToGroup": {
+      "maxLength": 0,
+      "blockedKeywords": [],
+      "blockedPlayerNames": [],
+      "blockedPlayerUuids": []
+    },
+    "groupToGame": {
+      "maxLength": 0,
+      "blockedKeywords": []
+    }
   }
 }

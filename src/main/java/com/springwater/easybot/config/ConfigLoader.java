@@ -131,19 +131,22 @@ public class ConfigLoader {
 
         String content = Files.readString(CONFIG_PATH);
         // 计算配置内容哈希值，用于后续检测文件是否真正变化
+        EasyBotConfig loaded = GSON.fromJson(content, EasyBotConfig.class);
+        if (loaded == null) throw new JsonSyntaxException("配置不能为 null");
+        loaded.validate();
+        currentConfig = loaded;
         lastConfigHash = content.hashCode();
-        currentConfig = GSON.fromJson(content, EasyBotConfig.class);
         LOGGER.info("配置加载成功。");
     }
 
     /**
      * 热重载配置
      */
-    public static synchronized void reload() {
+    public static synchronized boolean reload() {
         LOGGER.info("正在热重载配置...");
         if (!Files.exists(CONFIG_PATH)) {
-            LOGGER.warn("配置文件不存在，尝试重新创建...");
-            createDefaultConfigFromResources();
+            LOGGER.warn("配置文件不存在，继续使用上一个有效配置");
+            return false;
         }
 
         try {
@@ -153,7 +156,7 @@ public class ConfigLoader {
             long currentHash = content.hashCode();
             if (currentHash == lastConfigHash) {
                 LOGGER.debug("配置内容未变化，跳过重载");
-                return;
+                return true;
             }
             
             EasyBotConfig newConfig = GSON.fromJson(content, EasyBotConfig.class);
@@ -161,21 +164,26 @@ public class ConfigLoader {
                 throw new JsonSyntaxException("解析结果为 null");
             }
             
+            newConfig.validate();
             currentConfig = newConfig;
             lastConfigHash = currentHash;
             LOGGER.info("配置热重载成功！");
             
             // 同步通知监听器
             notifyListeners();
-        } catch (JsonSyntaxException e) {
+            var server = EasyBotModImpl.INSTANCE.getServer();
+            if (server != null) server.execute(() -> server.getPlayerList().getPlayers().forEach(player -> server.getCommands().sendCommands(player)));
+            return true;
+        } catch (JsonSyntaxException | IllegalArgumentException e) {
             LOGGER.error("============================================================");
-            LOGGER.error("!!! 配置重载失败 (JSON 语法错误) !!!");
+            LOGGER.error("!!! 配置重载失败 (语法或配置值错误) !!!");
             LOGGER.error("!!! 系统将继续使用【上一个可用版本】配置");
             LOGGER.error("!!! 错误详情: {}", e.getMessage());
             LOGGER.error("============================================================");
         } catch (IOException e) {
             LOGGER.error("读取配置文件时发生 IO 错误，配置未更新。", e);
         }
+        return false;
     }
 
     /**
@@ -292,6 +300,7 @@ public class ConfigLoader {
         document.getAsJsonObject("sync").addProperty(key, seconds);
         String content = GSON.toJson(document);
         EasyBotConfig next = GSON.fromJson(content, EasyBotConfig.class);
+        next.validate();
         JsonObject expected = GSON.toJsonTree(get()).getAsJsonObject();
         expected.getAsJsonObject("sync").addProperty(key, seconds);
         boolean otherSettingsChanged = !expected.equals(GSON.toJsonTree(next));
@@ -309,7 +318,11 @@ public class ConfigLoader {
         currentConfig = next;
         lastConfigHash = content.hashCode();
         // Cooldown listeners read the current config directly; no Bridge reconnect is needed.
-        if (otherSettingsChanged) notifyListeners();
+        if (otherSettingsChanged) {
+            notifyListeners();
+            var server = EasyBotModImpl.INSTANCE.getServer();
+            if (server != null) server.execute(() -> server.getPlayerList().getPlayers().forEach(player -> server.getCommands().sendCommands(player)));
+        }
     }
 
     /**

@@ -14,7 +14,7 @@ public class ConfigCommandHandler implements ICommandHandler {
     @Override
     public void register(LiteralArgumentBuilder<CommandSourceStack> stack) {
         var config = Commands.literal("config")
-                .requires(source -> PermissionUtils.hasPermission(source, 3))
+                .requires(source -> PermissionUtils.canUse(source, "config"))
                 .executes(context -> {
                     for (String key : ConfigLoader.COOLDOWN_KEYS) show(context.getSource(), key);
                     context.getSource().sendSystemMessage(Component.literal("用法: /easybot config <配置项> [秒数]，0 或负数关闭冷却"));

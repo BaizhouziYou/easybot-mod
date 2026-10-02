@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.springwater.easybot.bridge.packet.PlayerInfoWithRaw;
 import com.springwater.easybot.commands.ICommandHandler;
+import com.springwater.easybot.utils.PermissionUtils;
 import com.springwater.easybot.platforms.EasyBotModImpl;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.PlayerUtils;
@@ -22,7 +23,7 @@ public class SayCommandHandler implements ICommandHandler {
     @Override
     public void register(LiteralArgumentBuilder<CommandSourceStack> stack) {
         stack
-                .then(LiteralArgumentBuilder.<CommandSourceStack>literal("say")
+                .then(LiteralArgumentBuilder.<CommandSourceStack>literal("say").requires(source -> PermissionUtils.canUse(source, "say"))
                         .then(Commands.argument("messages", StringArgumentType.greedyString())
                                 .executes(context -> {
                                             String message = StringArgumentType.getString(context, "messages").trim();
@@ -43,6 +44,11 @@ public class SayCommandHandler implements ICommandHandler {
                                             if (context.getSource().isPlayer()) {
                                                 ServerPlayer player = context.getSource().getPlayerOrException();
                                                 playerInfo = PlayerUtils.getPlayerInfo(player);
+                                            }
+                                            String rejection = com.springwater.easybot.utils.ChatFilterUtils.outgoingRejection(playerInfo, message);
+                                            if (rejection != null) {
+                                                context.getSource().sendFailure(Component.literal("未转发: " + rejection));
+                                                return 0;
                                             }
                                             PlayerInfoWithRaw finalPlayerInfo = playerInfo;
                                             EasyBotNetworkingThreadPool.getInstance().addTask(() -> {

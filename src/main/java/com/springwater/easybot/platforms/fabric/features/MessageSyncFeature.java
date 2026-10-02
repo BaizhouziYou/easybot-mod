@@ -8,6 +8,7 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.ChatFilterUtils;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +27,7 @@ public class MessageSyncFeature {
             return;
         }
         var playerInfo = PlayerUtils.getPlayerInfo(sender); // 注意,最好不要在别的线程获取,你永远不知道下一个tick数据是否可用
+        if (ChatFilterUtils.outgoingRejection(playerInfo, message.signedContent()) != null) return;
         EasyBotNetworkingThreadPool.getInstance().addTask(() -> EasyBotModImpl.INSTANCE.getBridgeClient().syncMessage(playerInfo, message.signedContent(), false), "消息同步");
     }
 }

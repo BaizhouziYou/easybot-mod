@@ -8,6 +8,7 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.ChatFilterUtils;
 import com.springwater.easybot.utils.TextUtils;
 import net.minecraftforge.event.ServerChatEvent;
 
@@ -35,6 +36,7 @@ public class MessageSyncFeature implements IEasyBotFeatures {
         var message = event.getRawText();
         var playerInfo = PlayerUtils.getPlayerInfo(player);
 
+        if (ChatFilterUtils.outgoingRejection(playerInfo, message) != null) return;
         EasyBotNetworkingThreadPool.getInstance().addTask(() ->
                 LegacyForgeEntry.getBridgeClient().syncMessage(playerInfo, message, false), "消息同步");
     }
