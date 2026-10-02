@@ -13,6 +13,7 @@ public class EasyBotCommands {
             new StatusCommandHandler(),
             new SayCommandHandler(),
             new ReloadCommandHandler(),
+            new ConfigCommandHandler(),
             new BindCommandHandler()
     );
 

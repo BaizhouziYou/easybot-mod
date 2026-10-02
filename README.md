@@ -9,6 +9,16 @@ EasyBot的Minecraft模组实现端,基于[Stonecutter](https://stonecutter.kikug
 
 ## 播报冷却
 
+管理员（权限等级 3，与 reload 相同）可用 `/easybot config` 查看冷却配置，或执行以下命令保存并即时生效：
+
+```text
+/easybot config sync.joinCooldownSeconds 60
+/easybot config sync.quitCooldownSeconds 60
+/easybot config sync.deathCooldownSeconds 30
+```
+
+省略秒数时查看该项；支持配置项和常用秒数补全。秒数须为 32 位整数，`0` 或负数关闭冷却。命令只开放上述三个冷却项，保存失败时保留原配置。
+
 在 `config/easybot/config.json` 的 `sync` 中配置冷却秒数，例如：
 
 ```json

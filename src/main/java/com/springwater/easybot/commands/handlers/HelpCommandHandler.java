@@ -32,6 +32,9 @@ public class HelpCommandHandler implements ICommandHandler {
         root.append(buildCommandLine("/easybot say <消息>", "主动消息同步"));
         root.append(buildCommandLine("/easybot status", "获取状态,需OP"));
         root.append(buildCommandLine("/easybot reload", "重载配置,需OP"));
+        if (com.springwater.easybot.utils.PermissionUtils.hasPermission(source, 3)) {
+            root.append(buildCommandLine("/easybot config <配置项> [秒数]", "查看或修改播报冷却,需OP"));
+        }
         root.append(Component.literal("\n--------------------------------------------------")
                 .withStyle(ChatFormatting.GRAY));
         source.sendSuccess(() -> root, false);
