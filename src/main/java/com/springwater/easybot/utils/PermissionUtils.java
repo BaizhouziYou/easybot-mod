@@ -19,7 +19,7 @@ public class PermissionUtils {
             Boolean allowed = LuckPermsPermissions.check(source, "easybot.command." + command.toLowerCase(java.util.Locale.ROOT));
             if (allowed != null) return allowed;
         }
-        int defaultLevel = command.equals("reload") || command.equals("status") ? 3 : 0;
+        int defaultLevel = command.equals("reload") || command.equals("status") || command.equals("config") ? 3 : 0;
         return hasPermission(source, config.getPermissionLevels().getOrDefault(command, defaultLevel));
     }
 

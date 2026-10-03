@@ -7,6 +7,35 @@ EasyBot的Minecraft模组实现端,基于[Stonecutter](https://stonecutter.kikug
 - 使用 Gradle 任务中的 `"Set active project to ..."` 来更新 `src/` 目录下类文件可用的 Minecraft 版本。
 - 使用 `buildAndCollect` Gradle 任务将模组发布文件存储在 `build/libs/` 目录。
 
+## 播报冷却
+
+管理员可用 `/easybot config` 查看冷却配置，或执行以下命令保存并即时生效。默认权限等级为 3，与 reload 相同；支持下文的命令开关、权限等级和 LuckPerms 节点配置。
+
+```text
+/easybot config sync.joinCooldownSeconds 60
+/easybot config sync.quitCooldownSeconds 60
+/easybot config sync.deathCooldownSeconds 30
+```
+
+省略秒数时查看该项；支持配置项和常用秒数补全。秒数须为 32 位整数，`0` 或负数关闭冷却。命令只开放上述三个冷却项，保存失败时保留原配置。
+
+在 `config/easybot/config.json` 的 `sync` 中配置冷却秒数，例如：
+
+```json
+"sync": {
+  "chatImageSupport": true,
+  "joinCooldownSeconds": 60,
+  "quitCooldownSeconds": 60,
+  "deathCooldownSeconds": 60
+}
+```
+
+- 三项默认均为 `0`，`0` 或负数表示关闭；旧配置无需修改。
+- 进服、退服按玩家 UUID 分别计时；死亡按玩家 UUID 和伤害类型分别计时。
+- 首次正常播报，冷却中的重复事件不延长时间；切换死因不会清除原死因的冷却。
+- 只跳过发往主程序的对应播报，不取消游戏事件或改变登录验证。`skipOptions` 仍优先生效。
+- 修改某项时长并重载后，该类事件下次发生时清空原冷却；冷却不写入磁盘，重启后重新计时。
+
 ## 实用链接
 
 - [Stonecutter 新手指南](https://stonecutter.kikugie.dev/wiki/start/)：*提示：您必须理解其运作原理！*
@@ -62,6 +91,7 @@ EasyBot的Minecraft模组实现端,基于[Stonecutter](https://stonecutter.kikug
 | `/easybot say <消息>` | `say` | `easybot.command.say` | 0 |
 | `/easybot status`（服务状态） | `status` | `easybot.command.status` | 3 |
 | `/easybot reload` | `reload` | `easybot.command.reload` | 3 |
+| `/easybot config <配置项> [秒数]` | `config` | `easybot.command.config` | 3 |
 | `/easybot bind`、`/easybot bind confirm` | `bind` | `easybot.command.bind` | 0 |
 | `/easybot confirm <code>` | `confirm` | `easybot.command.confirm`，同时要求 `bind` 权限 | 0 |
 | `/easybot bind status`（绑定状态） | `bindStatus` | `easybot.command.bindstatus` | 0 |

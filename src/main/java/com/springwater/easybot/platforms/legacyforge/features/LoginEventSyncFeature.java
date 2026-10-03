@@ -8,12 +8,15 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.SyncCooldown;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class LoginEventSyncFeature implements IEasyBotFeatures {
+    private final SyncCooldown joinCooldown = new SyncCooldown();
+    private final SyncCooldown quitCooldown = new SyncCooldown();
     @Override
     public void register() {
         MinecraftForge.EVENT_BUS.register(this);
@@ -34,6 +37,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
             return;
         }
 
+        if (!joinCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getJoinCooldownSeconds())) return;
         var playerInfo = PlayerUtils.getPlayerInfo(player);
         EasyBotNetworkingThreadPool.getInstance().addTask(() ->
                 LegacyForgeEntry.getBridgeClient().syncEnterExit(playerInfo, true), "消息同步-进服");
@@ -54,6 +58,7 @@ public class LoginEventSyncFeature implements IEasyBotFeatures {
             return;
         }
 
+        if (!quitCooldown.allow(player.getUUID().toString(), ConfigLoader.get().getSync().getQuitCooldownSeconds())) return;
         var playerInfo = PlayerUtils.getPlayerInfo(player);
         EasyBotNetworkingThreadPool.getInstance().addTask(() ->
                 LegacyForgeEntry.getBridgeClient().syncEnterExit(playerInfo, false), "消息同步-退服");

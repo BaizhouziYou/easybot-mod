@@ -8,6 +8,7 @@ import com.springwater.easybot.platforms.ModData;
 import com.springwater.easybot.threading.EasyBotNetworkingThreadPool;
 import com.springwater.easybot.utils.CarpetUtils;
 import com.springwater.easybot.utils.PlayerUtils;
+import com.springwater.easybot.utils.SyncCooldown;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -17,6 +18,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import static com.springwater.easybot.utils.DamageTypeMappings.DEATH_MESSAGES;
 
 public class PlayerDeathSyncFeature implements IEasyBotFeatures {
+    private final SyncCooldown deathCooldown = new SyncCooldown();
 
     @Override
     public void register() {
@@ -38,6 +40,9 @@ public class PlayerDeathSyncFeature implements IEasyBotFeatures {
             
             var source = event.getSource();
 
+            if (EasyBotModImpl.INSTANCE.getBridgeClient() == null || !EasyBotModImpl.INSTANCE.getBridgeClient().isReady()) return;
+            String cause = source.typeHolder().unwrapKey().map(Object::toString).orElse(source.getMsgId());
+            if (!deathCooldown.allow(player.getUUID() + ":" + cause, ConfigLoader.get().getSync().getDeathCooldownSeconds())) return;
             var profile = PlayerUtils.getPlayerInfo(player);
             var killer = new StringBuilder();
             var deathReason = new StringBuilder();

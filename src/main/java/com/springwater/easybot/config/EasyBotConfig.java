@@ -100,7 +100,7 @@ public class EasyBotConfig {
         chatFilter.groupToGame.validate();
         if (!chatFilter.groupToGame.blockedPlayerNames.isEmpty() || !chatFilter.groupToGame.blockedPlayerUuids.isEmpty())
             throw new IllegalArgumentException("groupToGame 不支持玩家名单，主程序未提供发言人身份");
-        var commands = List.of("help", "say", "status", "reload", "bind", "confirm", "bindStatus");
+        var commands = List.of("help", "say", "status", "reload", "config", "bind", "confirm", "bindStatus");
         if (command.enabled == null || command.permissionLevels == null)
             throw new IllegalArgumentException("命令配置不能为 null");
         command.enabled.forEach((name, value) -> {
@@ -143,5 +143,8 @@ public class EasyBotConfig {
     @ToString
     public static class Sync {
         private boolean chatImageSupport = true;
+        private int joinCooldownSeconds = 0;
+        private int quitCooldownSeconds = 0;
+        private int deathCooldownSeconds = 0;
     }
 }

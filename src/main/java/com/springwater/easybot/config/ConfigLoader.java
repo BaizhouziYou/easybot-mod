@@ -3,6 +3,7 @@ package com.springwater.easybot.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonObject;
 import com.springwater.easybot.platforms.EasyBotModImpl;
 import com.springwater.easybot.platforms.ModData;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class ConfigLoader {
 
     // 当前正在使用的配置实例
     private static volatile EasyBotConfig currentConfig;
+    public static final List<String> COOLDOWN_KEYS = List.of("joinCooldownSeconds", "quitCooldownSeconds", "deathCooldownSeconds");
     // 配置内容哈希值，用于检测文件是否真正变化
     private static long lastConfigHash = 0;
 
@@ -121,7 +123,7 @@ public class ConfigLoader {
      * @throws IOException         读取配置文件时发生 IO 错误
      * @throws JsonSyntaxException 配置文件格式错误
      */
-    public static void load() throws IOException {
+    public static synchronized void load() throws IOException {
         if (!Files.exists(CONFIG_PATH)) {
             LOGGER.info("未找到配置文件，正在创建默认配置...");
             createDefaultConfigFromResources();
@@ -140,7 +142,7 @@ public class ConfigLoader {
     /**
      * 热重载配置
      */
-    public static boolean reload() {
+    public static synchronized boolean reload() {
         LOGGER.info("正在热重载配置...");
         if (!Files.exists(CONFIG_PATH)) {
             LOGGER.warn("配置文件不存在，继续使用上一个有效配置");
@@ -263,7 +265,7 @@ public class ConfigLoader {
     /**
      * 保存当前内存中的配置到磁盘。
      */
-    public static void save() {
+    public static synchronized void save() {
         if (currentConfig == null) {
             currentConfig = new EasyBotConfig();
         }
@@ -276,6 +278,50 @@ public class ConfigLoader {
             LOGGER.info("配置已保存。");
         } catch (IOException e) {
             LOGGER.error("保存配置失败!", e);
+        }
+    }
+
+    public static int getCooldown(String key) {
+        var sync = get().getSync();
+        return switch (key) {
+            case "joinCooldownSeconds" -> sync.getJoinCooldownSeconds();
+            case "quitCooldownSeconds" -> sync.getQuitCooldownSeconds();
+            case "deathCooldownSeconds" -> sync.getDeathCooldownSeconds();
+            default -> throw new IllegalArgumentException("未知冷却配置项: " + key);
+        };
+    }
+
+    public static synchronized void setCooldown(String key, int seconds) throws IOException {
+        if (!COOLDOWN_KEYS.contains(key)) throw new IllegalArgumentException("未知冷却配置项: " + key);
+        // Preserve fields unknown to this version, and reject malformed files before writing.
+        JsonObject document = GSON.fromJson(Files.readString(CONFIG_PATH), JsonObject.class);
+        if (document == null) throw new JsonSyntaxException("配置不能为 null");
+        if (!document.has("sync")) document.add("sync", new JsonObject());
+        document.getAsJsonObject("sync").addProperty(key, seconds);
+        String content = GSON.toJson(document);
+        EasyBotConfig next = GSON.fromJson(content, EasyBotConfig.class);
+        next.validate();
+        JsonObject expected = GSON.toJsonTree(get()).getAsJsonObject();
+        expected.getAsJsonObject("sync").addProperty(key, seconds);
+        boolean otherSettingsChanged = !expected.equals(GSON.toJsonTree(next));
+        Path temporary = Files.createTempFile(CONFIG_PATH.getParent(), "easybot-config-", ".tmp");
+        try {
+            Files.writeString(temporary, content);
+            try {
+                Files.move(temporary, CONFIG_PATH, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+        currentConfig = next;
+        lastConfigHash = content.hashCode();
+        // Cooldown listeners read the current config directly; no Bridge reconnect is needed.
+        if (otherSettingsChanged) {
+            notifyListeners();
+            var server = EasyBotModImpl.INSTANCE.getServer();
+            if (server != null) server.execute(() -> server.getPlayerList().getPlayers().forEach(player -> server.getCommands().sendCommands(player)));
         }
     }
 
